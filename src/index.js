@@ -2,23 +2,12 @@ import { fetchBreeds, fetchCatByBreed } from './cat-api.js';
 
 const breedSelect = document.querySelector('.breed-select');
 const loader = document.querySelector('.loader');
-const error = document.querySelector('.error');
+const errorr = document.querySelector('.error');
 const catInfo = document.querySelector('.cat-info');
-hideError();
-function showLoader() {
-  loader.style.display = 'block';
-}
 
-function hideLoader() {
-  loader.style.display = 'none';
-}
-
-function showError() {
-  error.style.display = 'block';
-}
-
-function hideError() {
-  error.style.display = 'none';
+toggleMessage(errorr, `none`);
+function toggleMessage(el, state) {
+  el.style.display = state;
 }
 
 function showCatInfo(imageUrl, breedName, description, temperament) {
@@ -47,43 +36,41 @@ function clearCatInfo() {
 }
 
 function populateBreedSelect(breeds) {
-  breeds.forEach(breed => {
+  const options = breeds.map(breed => {
     const option = document.createElement('option');
     option.value = breed.id;
     option.textContent = breed.name;
-    breedSelect.appendChild(option);
+    return option;
   });
+
+  breedSelect.append(...options);
 }
 
 breedSelect.addEventListener('change', () => {
   const breedId = breedSelect.value;
   clearCatInfo();
-  showLoader();
+  toggleMessage(loader, `block`);
   fetchCatByBreed(breedId)
     .then(data => {
       const cat = data[0];
-      const imageUrl = cat.url;
-      const breedName = cat.breeds[0].name;
-      const description = cat.breeds[0].description;
-      const temperament = cat.breeds[0].temperament;
-      hideLoader();
-      showCatInfo(imageUrl, breedName, description, temperament);
+      const { url, breeds } = cat;
+      const { name, description, temperament } = breeds[0];
+      showCatInfo(url, name, description, temperament);
     })
     .catch(error => {
-      hideLoader();
-      showError();
+      toggleMessage(errorr, `block`);
       console.error(error);
-    });
+    })
+    .finally(() => toggleMessage(loader, `none`));
 });
 
-showLoader();
+toggleMessage(loader, `block`);
 fetchBreeds()
   .then(breeds => {
-    hideLoader();
     populateBreedSelect(breeds);
   })
   .catch(error => {
-    hideLoader();
-    showError();
+    toggleMessage(errorr, `block`);
     console.error(error);
-  });
+  })
+  .finally(() => toggleMessage(loader, `none`));
